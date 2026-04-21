@@ -16,7 +16,7 @@ __pycache__/
 *.db
 *.sqlite
 chroma_db/
-data/pdfs/
+# data/pdfs/ removed — including PDFs so evaluator can reproduce document_qa retrieval tests
 logs/
 runs/
 
