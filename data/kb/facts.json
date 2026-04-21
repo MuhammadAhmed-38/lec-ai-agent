@@ -1,0 +1,105 @@
+{
+  "countries": {
+    "france": {
+      "capital": "Paris",
+      "population_millions": 67.97,
+      "area_sq_km": 643801,
+      "currency": "Euro",
+      "continent": "Europe",
+      "official_language": "French"
+    },
+    "japan": {
+      "capital": "Tokyo",
+      "population_millions": 125.1,
+      "area_sq_km": 377975,
+      "currency": "Japanese Yen",
+      "continent": "Asia",
+      "official_language": "Japanese"
+    },
+    "pakistan": {
+      "capital": "Islamabad",
+      "population_millions": 240.5,
+      "area_sq_km": 881913,
+      "currency": "Pakistani Rupee",
+      "continent": "Asia",
+      "official_language": "Urdu"
+    },
+    "united_kingdom": {
+      "capital": "London",
+      "population_millions": 67.33,
+      "area_sq_km": 243610,
+      "currency": "Pound Sterling",
+      "continent": "Europe",
+      "official_language": "English"
+    },
+    "brazil": {
+      "capital": "Brasilia",
+      "population_millions": 215.3,
+      "area_sq_km": 8515767,
+      "currency": "Brazilian Real",
+      "continent": "South America",
+      "official_language": "Portuguese"
+    },
+    "india": {
+      "capital": "New Delhi",
+      "population_millions": 1428.6,
+      "area_sq_km": 3287263,
+      "currency": "Indian Rupee",
+      "continent": "Asia",
+      "official_language": "Hindi"
+    }
+  },
+  "companies": {
+    "apple": {
+      "founded": 1976,
+      "headquarters": "Cupertino, California",
+      "ceo": "Tim Cook",
+      "industry": "Consumer Electronics",
+      "notable_products": ["iPhone", "Mac", "iPad", "Apple Watch"]
+    },
+    "microsoft": {
+      "founded": 1975,
+      "headquarters": "Redmond, Washington",
+      "ceo": "Satya Nadella",
+      "industry": "Software, Cloud Computing",
+      "notable_products": ["Windows", "Office", "Azure", "Xbox"]
+    },
+    "anthropic": {
+      "founded": 2021,
+      "headquarters": "San Francisco, California",
+      "ceo": "Dario Amodei",
+      "industry": "AI Safety Research",
+      "notable_products": ["Claude"]
+    },
+    "openai": {
+      "founded": 2015,
+      "headquarters": "San Francisco, California",
+      "ceo": "Sam Altman",
+      "industry": "AI Research",
+      "notable_products": ["ChatGPT", "GPT-4", "DALL-E"]
+    },
+    "google": {
+      "founded": 1998,
+      "headquarters": "Mountain View, California",
+      "ceo": "Sundar Pichai",
+      "industry": "Search, Advertising, Cloud",
+      "notable_products": ["Search", "Gmail", "Android", "YouTube"]
+    }
+  },
+  "scientific_constants": {
+    "speed_of_light_mps": 299792458,
+    "gravitational_constant_si": 6.6743e-11,
+    "planck_constant_si": 6.62607015e-34,
+    "avogadro_number": 6.02214076e23,
+    "electron_mass_kg": 9.1093837015e-31,
+    "pi": 3.141592653589793,
+    "euler_number": 2.718281828459045
+  },
+  "historical_events": {
+    "wwii_end_year": 1945,
+    "moon_landing_year": 1969,
+    "internet_public_year": 1993,
+    "iphone_release_year": 2007,
+    "gpt4_release_year": 2023
+  }
+}
