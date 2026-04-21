@@ -123,11 +123,15 @@ class KnowledgeBaseTool(Tool):
             current = current[match]
             traversed.append(match)
 
-        # Format the result for the LLM
+        # Format the result for the LLM.
+        # For scalars (int/float/str/bool): return raw value so downstream
+        # tools (e.g. calculator) can consume it cleanly.
+        # For dicts/lists: return formatted JSON with path context.
         full_path = ".".join(traversed)
         if isinstance(current, dict):
             formatted = json.dumps(current, indent=2, ensure_ascii=False)
             return f"Facts at '{full_path}':\n{formatted}"
         if isinstance(current, list):
-            return f"'{full_path}' = {current}"
-        return f"'{full_path}' = {current}"
+            return f"{current}"  # raw list, no prefix
+        # Scalar: int, float, str, bool
+        return f"{current}"

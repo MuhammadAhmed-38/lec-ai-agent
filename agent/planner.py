@@ -252,12 +252,22 @@ class Planner:
             return _validate_plan(data, self.registry)
 
     def _build_user_message(self, query: str) -> str:
-        tool_descriptions = "\n\n".join(
-            f"- {t.name}: {t.description}" for t in self.registry.all()
-        )
+        import json as _json
+        tool_blocks = []
+        for t in self.registry.all():
+            schema_json = _json.dumps(t.input_schema, indent=2)
+            tool_blocks.append(
+                f"### Tool: {t.name}\n"
+                f"Description: {t.description}\n"
+                f"Input schema (USE THESE EXACT ARGUMENT NAMES):\n{schema_json}"
+            )
+        tool_section = "\n\n".join(tool_blocks)
         return (
             f"User query:\n{query}\n\n"
-            f"Available tools:\n{tool_descriptions}\n\n"
+            f"Available tools:\n\n{tool_section}\n\n"
+            f"IMPORTANT: In each step's 'arguments' field, use the EXACT "
+            f"parameter names from the input_schema above. Do not invent "
+            f"new parameter names.\n\n"
             f"Produce the plan as JSON."
         )
 

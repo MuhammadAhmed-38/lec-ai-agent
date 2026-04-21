@@ -113,15 +113,19 @@ def _substitute_placeholders(
     Replace {{step_N.output}} placeholders inside string arg values
     with the stringified output of step N. Non-string args pass through.
     """
+    unresolved: list[str] = []
+
     def _sub_value(v: Any) -> Any:
         if isinstance(v, str):
             def _repl(match: re.Match) -> str:
                 step_id = int(match.group(1))
                 if step_id not in completed:
-                    return match.group(0)  # leave unchanged — executor logs a warning
+                    unresolved.append(match.group(0))
+                    return match.group(0)  # leave unchanged
                 prev = completed[step_id]
                 if prev.success:
                     return str(prev.output)
+                unresolved.append(match.group(0))
                 return f"[error from step_{step_id}: {prev.error}]"
             return _PLACEHOLDER_RE.sub(_repl, v)
         if isinstance(v, dict):
@@ -130,7 +134,13 @@ def _substitute_placeholders(
             return [_sub_value(x) for x in v]
         return v
 
-    return {k: _sub_value(v) for k, v in arguments.items()}
+    result = {k: _sub_value(v) for k, v in arguments.items()}
+    if unresolved:
+        logger.warning(
+            f"Unresolved placeholders {unresolved} — dependent step likely failed upstream."
+        )
+    return result
+
 
 
 # ==========================================================
@@ -229,9 +239,18 @@ class Executor:
             f"User query:\n{query}\n\n"
             f"Plan reasoning (from planner):\n{plan.reasoning}\n\n"
             f"Tool observations:\n{observations}\n\n"
-            f"Produce the final answer to the user query. "
-            f"Be concise and direct. If any step failed and you cannot "
-            f"recover the information, say so clearly."
+            f"Instructions for your final answer:\n"
+            f"1. Use ONLY information from the tool observations above.\n"
+            f"2. Do NOT invent, estimate, or recall facts from your training. "
+            f"If the observations don't contain the answer, say so explicitly.\n"
+            f"3. Do NOT generate tool call syntax (no <function_calls>, "
+            f"no <invoke>). You are NOT calling tools now — the tool phase "
+            f"is complete. Produce plain-text answer only.\n"
+            f"4. If any step failed and the information isn't otherwise "
+            f"available in observations, state: 'I was unable to "
+            f"determine X because [tool name] failed with [error].'\n"
+            f"5. Be concise and direct.\n\n"
+            f"Final answer:"
         )
 
         response = await asyncio.to_thread(

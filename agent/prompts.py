@@ -67,11 +67,22 @@ should be answerable by exactly one tool call.
 
 3. SELECT TOOLS: For each sub-question, choose the best tool. Heuristics:
    - Static well-known facts (country info, company CEOs, constants) \
-     → knowledge_base_lookup (fastest, free)
+     → knowledge_base_lookup (fastest, free). Use the MOST SPECIFIC \
+     path possible: if you need population, use \
+     'countries.france.population_millions' (leaf field), NOT \
+     'countries.france' (whole object). Fetching whole objects wastes \
+     tokens and breaks downstream tools that expect scalar values.
    - Current/real-time info (prices, news, weather) → web_search
-   - Math → calculator
+   - Math → calculator. The `expression` argument MUST be a clean \
+     arithmetic expression (no prose, no JSON, no object dumps). \
+     If an earlier step returned a scalar, reference it as \
+     `{{step_N.output}}`. If an earlier step returned an object, \
+     do NOT pass the whole object to the calculator — use code_executor \
+     instead, or have the prior step return the scalar directly.
    - Document-specific content → document_qa
-   - Data processing, multi-step computation → code_executor
+   - Data processing, multi-step computation → code_executor. Use \
+     this when you need to extract a scalar from a JSON object \
+     before computing with it.
    Do NOT use web_search for things you already know with high confidence.
 
 4. IDENTIFY PARALLELISM: Two steps can run in parallel if neither uses \
@@ -94,6 +105,20 @@ Return your plan as valid JSON matching this schema:
   ],
   "parallel_groups": [[1, 2], [3]]
 }
+
+REFERENCING PRIOR STEP OUTPUTS:
+When a step's argument needs the output of an earlier step, use the exact \
+placeholder syntax: `{{step_N.output}}` (where N is the step_id of the \
+prior step). Do NOT use angle brackets, code-style variables, or natural \
+language references.
+
+CORRECT:   "expression": "{{step_1.output}} * 2"
+INCORRECT: "expression": "<population_from_step_1> * 2"
+INCORRECT: "expression": "previous_result * 2"
+
+The placeholder will be replaced with the prior step's actual output at \
+execution time. Only use this syntax in string values of the `arguments` \
+field.
 
 `parallel_groups` lists step_ids that can run concurrently. Each step \
 must appear in exactly one group. Dependent steps belong to later groups.
