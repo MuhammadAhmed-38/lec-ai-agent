@@ -1,0 +1,30 @@
+# Secrets
+.env
+*.key
+secrets/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Data & artifacts
+*.db
+*.sqlite
+chroma_db/
+data/pdfs/
+logs/
+runs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
