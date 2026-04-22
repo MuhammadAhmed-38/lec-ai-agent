@@ -1,82 +1,157 @@
-# LEC AI Agent
+# LEC AI Agent — Production Agentic System
 
-A production-grade agentic system that orchestrates 5 tools to answer
-multi-step queries reliably. Built for the LEC AI AI Engineer assignment.
+A multi-tool agent that decomposes user queries into an explicit JSON plan,
+executes tools in parallel where possible, and synthesises grounded final
+answers. Built for the LEC AI AI Engineer assignment (Assignment 2).
 
-## Quick Start
+## TL;DR results
+
+- **9/10 queries passed** on the evaluation set (v2 structured prompts)
+- **Mean cost $0.014/query**, mean latency ~13s
+- **Ablation delta:** v2 scored 10pp higher than v1 (minimal prompts)
+- 5 production tools: calculator, web_search, knowledge_base, document_qa, code_executor
+- Hard budget caps, parallel tool execution, JSON repair, graceful failure recovery
+
+## Documents
+
+| Document | What it covers |
+|---|---|
+| [`REPORT.md`](./REPORT.md) | 2-page report: results, failures, learnings, ablation |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | System design, trade-offs, scaling analysis (100 concurrent users) |
+| [`ROADMAP.md`](./ROADMAP.md) | 5 features to ship next week, grounded in observed limitations |
+| [`AI_USAGE.md`](./AI_USAGE.md) | Honest breakdown of AI-assisted workflow |
+| [`FAILURE_LOG.md`](./FAILURE_LOG.md) | Raw debugging log from development |
+| [`REPORT_NOTES.md`](./REPORT_NOTES.md) | Development notes, eval findings |
+
+## Quick start
 
 ```bash
-# 1. Install dependencies
-python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
+# 1. Clone and enter
+git clone https://github.com/MuhammadAhmed-38/lec-ai-agent.git
+cd lec-ai-agent
+
+# 2. Install
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 
-# 2. Configure API keys
+# 3. Configure API keys
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY and TAVILY_API_KEY
+# Edit .env: add ANTHROPIC_API_KEY and TAVILY_API_KEY
 
-# 3. (Optional) ingest PDFs for document_qa tool
+# 4. (Optional) Ingest PDFs for document_qa tool
 python -m tools.document_qa
 
-# 4. Run a query
+# 5. Run a query
 python main.py "What is the population of France multiplied by 2?"
 ```
 
-## CLI Usage
+## CLI usage
 
 ```bash
-python main.py "your query"                       # human-readable output
-python main.py "your query" --json                # JSON output (for eval)
-python main.py "your query" --prompt-version v1   # use baseline prompt
-python main.py "your query" --verbose             # detailed logs
+# Human-readable output (default)
+python main.py "your query"
+
+# JSON output (for eval harnesses or programmatic use)
+python main.py "your query" --json
+
+# Use baseline (minimal) prompts instead of structured
+python main.py "your query" --prompt-version v1
+
+# Verbose logging
+python main.py "your query" --verbose
 ```
+
+### Example output
+
+======================================================================
+QUERY: What is the population of France multiplied by 2?
+PLAN (2 step(s), 2 group(s)):
+Reasoning: Need France's population from KB, then multiply by 2...
+[1] knowledge_base_lookup({'action': 'lookup', 'path': 'countries.france.population_millions'})
+[2] calculator({'expression': '{{step_1.output}} * 2'}) depends_on=[1]
+Parallel groups: [[1], [2]]
+EXECUTION:
+[1] knowledge_base_lookup -> OK (1ms)
+[2] calculator -> OK (0ms)
+FINAL ANSWER:
+The population of France is 67.97 million. Multiplied by 2, this equals 135.94 million.
+======================================================================
+METRICS: 10.50s wall time | 2 LLM calls | $0.012457 query spend | 1 iteration(s)
 
 ## Tools
 
-The agent has access to 5 tools:
+| Tool | Purpose | Backend |
+|---|---|---|
+| `calculator` | Safe arithmetic evaluation | Python AST whitelist |
+| `web_search` | Current/real-time information | Tavily API |
+| `knowledge_base_lookup` | Structured facts lookup | Local JSON (`data/kb/facts.json`) |
+| `document_qa` | Q&A over ingested PDFs | ChromaDB + `all-MiniLM-L6-v2` |
+| `code_executor` | Python code execution | Subprocess-isolated sandbox |
 
-| Tool | Purpose |
-|---|---|
-| `web_search` | Tavily-backed web search for current information |
-| `calculator` | AST-based safe arithmetic evaluator |
-| `knowledge_base_lookup` | Structured facts lookup (local JSON KB) |
-| `code_executor` | Sandboxed Python execution for data analysis |
-| `document_qa` | Vector search over ingested PDFs (ChromaDB + MiniLM-L6-v2) |
+## Running the evaluation
 
-## Architecture
+```bash
+# Full baseline (v2 prompts, all 10 queries)
+python -m eval.runner --prompt-version v2
 
-Query → **Planner** (Sonnet) produces structured JSON plan →
-**Executor** (Haiku) runs tools (sequential or parallel) →
-**Synthesis** turns observations into a final answer.
+# Ablation (v1 minimal prompts)
+python -m eval.runner --prompt-version v1
 
-Full details in `ARCHITECTURE.md` (to be added).
+# Specific queries only
+python -m eval.runner --prompt-version v2 --queries Q1 Q4 Q7
+```
 
-## Project Structure
+Results are saved as JSON in `runs/`. Baseline + ablation artifacts are
+committed as `runs/eval_v2_baseline.json` and `runs/eval_v1_ablation.json`.
+
+## Project structure
+
 agent/
-config.py         Load env vars, model pricing
-budget.py         Token + cost tracking, hard caps
-prompts.py        v1 (baseline) and v2 (structured) prompts
-planner.py        Query → plan JSON (Sonnet)
-executor.py       Plan → observations → answer (Haiku)
-orchestrator.py   Top-level coordinator
+config.py         Env-var loading, model pricing
+budget.py         Token + cost tracking with hard caps (thread-safe)
+prompts.py        v1 (baseline) + v2 (structured) prompts
+planner.py        Query → Plan JSON (Sonnet) with JSON repair + retry
+executor.py       Plan → observations (parallel tools) + synthesis (Haiku)
+orchestrator.py   Top-level: plan → execute → AgentResult
 tools/
-base.py           Tool ABC + ToolRegistry
-calculator.py
-web_search.py
-knowledge_base.py
-code_executor.py
-document_qa.py
-eval/               (added in evaluation phase)
-data/               PDFs + local KB
+base.py           Tool ABC + ToolRegistry + ToolResult
+calculator.py     AST-safe arithmetic
+web_search.py     Tavily wrapper (async via thread pool)
+knowledge_base.py JSON lookup with case-insensitive dot-paths
+code_executor.py  Subprocess sandbox with network blocks + timeout
+document_qa.py    Incremental hash-based PDF ingestion + vector search
+eval/
+queries.py        10 evaluation queries with per-query rubrics
+judge.py          LLM-as-judge (Haiku) with structured Judgment output
+runner.py         Eval harness with per-capability aggregation
+data/
+kb/facts.json     Structured facts (countries, companies, constants)
+pdfs/             Sample PDFs for document_qa
+runs/               Evaluation results (JSON)
 main.py             CLI entry point
+test_setup.py       Pre-flight check (API keys, dependencies)
 
-## Running Tests
-Pre-flight check:
-```bash
-python test_setup.py
-```
+## Model usage & costs
 
-End-to-end agent run:
-```bash
-python main.py "What is 5 percent of 2000?" --verbose
-```
+- **Planner + synthesis:** `claude-sonnet-4-5` — plan quality dominates outcomes
+- **Judge (eval only):** `claude-haiku-4-5` — classification task, cheap
+- **Budget enforcement:** `BUDGET_CAP_PER_QUERY=0.10` (hard reject on over-spend)
+- **Observed per-query cost:** ~$0.010–$0.019
+
+## Known limitations (honest)
+
+See `REPORT.md` for detailed analysis. Short version:
+
+- **Multi-hop KB queries** — planner commits to a single lookup path and
+  doesn't iterate. Q8 (Apple CEO + iPhone release year) fails on this.
+  Mitigation in `ROADMAP.md` item #1 (reflection loop).
+- **Stochastic failure distribution** — Q10 gave different outputs across
+  runs. Production eval needs multi-run variance measurement.
+- **Single-process architecture** — not designed for concurrent load.
+  Scaling analysis in `ARCHITECTURE.md`.
+
+## License & attribution
+
+Built for LEC AI's AI Engineer hiring assignment. See `AI_USAGE.md` for
+the breakdown of Claude-assisted vs. human-authored contributions.
