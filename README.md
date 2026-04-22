@@ -90,6 +90,7 @@ METRICS: 10.50s wall time | 2 LLM calls | $0.012457 query spend | 1 iteration(s)
 | `document_qa` | Q&A over ingested PDFs | ChromaDB + `all-MiniLM-L6-v2` |
 | `code_executor` | Python code execution | Subprocess-isolated sandbox |
 
+
 ## Running the evaluation
 
 ```bash
@@ -102,6 +103,11 @@ python -m eval.runner --prompt-version v1
 # Specific queries only
 python -m eval.runner --prompt-version v2 --queries Q1 Q4 Q7
 ```
+
+## Evaluation summary
+
+Ran on 10 queries covering all 5 tools across sequential, parallel, and mixed-source scenarios. v2 passes 9/10 (90%); v1 passes 8/10 (80%). The single v2 failure (Q8, multi-hop KB lookup) reveals a structural planning limitation documented in [`REPORT.md`](./REPORT.md) and addressed in the roadmap. Full per-query breakdown: [`runs/eval_v2_baseline.json`](./runs/eval_v2_baseline.json).
+
 
 Results are saved as JSON in `runs/`. Baseline + ablation artifacts are
 committed as `runs/eval_v2_baseline.json` and `runs/eval_v1_ablation.json`.
