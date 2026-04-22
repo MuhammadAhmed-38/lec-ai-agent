@@ -18,7 +18,11 @@ __pycache__/
 chroma_db/
 # data/pdfs/ removed — including PDFs so evaluator can reproduce document_qa retrieval tests
 logs/
-runs/
+# Ignore intermediate runs by default, but keep final baseline+ablation for evidence
+runs/*
+!runs/final_*.json
+!runs/eval_v2_baseline.json
+!runs/eval_v1_ablation.json
 
 # OS
 .DS_Store
