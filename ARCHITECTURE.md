@@ -240,6 +240,120 @@ See the Report for a full "what breaks at 100 concurrent users" analysis.
 | Budget exceeded | `BudgetTracker.record()` pre- and post-hoc | Raises `BudgetExceededError`. Orchestrator captures and returns. |
 | Synthesis LLM hallucinates | v2 prompt's grounding rule + judge catches in eval | Partial credit in judge score; documented failure mode. |
 
+
+## Scaling analysis — what breaks at 100 concurrent users?
+
+A candid analysis of the current architecture under concurrent load. The
+answer is not "it breaks" or "it scales fine" — different bottlenecks
+dominate at different scales. I break them into four categories: things
+that break fast, things that degrade gracefully, things that already scale,
+and things that require design changes.
+
+### Breaks fast (first failure modes, <100 concurrent)
+
+**Anthropic API rate limits.** At tier-2 pricing, the account I'm using has
+roughly 4,000 requests per minute across Sonnet and Haiku combined. At 100
+concurrent users with ~2 LLM calls per query (planner + synthesis), that's
+~200 req/query × concurrent rate. If all 100 users fire queries within the
+same minute, we hit the RPM ceiling, and 429s start cascading. Every
+blocked request raises `anthropic.RateLimitError` which the current code
+does not catch — it propagates through `Orchestrator.run()` into
+`AgentResult(success=False)`. The user sees a hard failure.
+
+*Fix:* Wrap Anthropic calls with tenacity-style retry-with-jitter on 429,
+expose per-model QPS limits via a token-bucket middleware, and upgrade to
+tier-4 billing which raises the cap. Realistic ceiling even with fixes:
+single-region API has known upper bounds.
+
+**ChromaDB PersistentClient is single-process.** Document_qa uses
+`chromadb.PersistentClient(path=...)` which opens a SQLite-backed local
+store. Multiple agent workers on the same host can share it, but at 100
+concurrent queries the SQLite write lock becomes a contention point
+during ingestion operations. Read concurrency is fine (multiple readers).
+
+*Fix:* Switch to Chroma in server mode (runs as a separate service), or
+use a hosted vector DB (Pinecone, Weaviate) for multi-process writes.
+
+**Embedding model in-process.** The agent loads `all-MiniLM-L6-v2`
+(~22MB model + ~500MB PyTorch state) into each worker process. 100
+concurrent workers = 50GB of RAM just for the embedding model. This
+doesn't fit on anything short of a dedicated GPU box.
+
+*Fix:* Extract embeddings into a dedicated service (e.g., Triton, TGI)
+that worker processes call over HTTP. The agent process stays small;
+embedding compute is centralised.
+
+### Degrades gracefully (workable at 100 concurrent)
+
+**Tool latency.** Web_search (Tavily) takes 1-3 seconds. At 100
+concurrent users, Tavily's rate limits (free tier: 1000 req/month) are
+the first wall — not our concurrency model. The agent's `asyncio`-based
+parallel execution means 100 queries each running ~3 tools in parallel
+is 300 in-flight HTTP calls. This is fine from `asyncio`'s perspective
+(it's designed for exactly this), but each worker process needs its
+connection pool sized appropriately (`aiohttp` default is 100; bump
+to 500+).
+
+**Budget tracking.** The global session counter uses `threading.Lock`.
+Per-query budget is local to each `Orchestrator.run()` call and fully
+independent. Lock contention is negligible at 100 concurrent writers
+to a single counter. Python's GIL means the arithmetic itself is
+serialised, but one atomic add per API call is nowhere near a bottleneck.
+
+### Already scales
+
+**Calculator, code_executor, knowledge_base_lookup.** These are
+pure-Python or subprocess-local. No shared resources, no external
+APIs, no network dependencies. They scale linearly with CPU cores.
+
+**Plan validation, placeholder substitution.** All in-memory, no I/O,
+microseconds per operation.
+
+### Requires design changes (>100 concurrent, toward 1,000+)
+
+**No request queue or admission control.** Currently, `Orchestrator.run()`
+is called directly and runs immediately. Under overload, new requests
+compete for the same API quota as in-flight requests, causing everyone
+to slow down equally. A production deployment needs a queue
+(Redis/RabbitMQ) with per-tenant rate limiting and drop-on-overload
+policy.
+
+**No circuit breakers on external APIs.** If Tavily goes down, every
+web_search call waits the full timeout (20s) before failing. At 100
+concurrent users, that's 100 workers blocked for 20s each. Circuit
+breakers (e.g., `aiobreaker`) would fail fast after N failures.
+
+**ChromaDB as a single point of failure.** Even in server mode, a
+single Chroma instance serving 100+ concurrent queries becomes the
+bottleneck. Real deployments need sharded vector stores with read
+replicas.
+
+**Observability gap.** At 100 concurrent users, log-based debugging
+stops being viable. Need distributed tracing (OpenTelemetry), metrics
+backend (Prometheus), and structured logging with correlation IDs.
+The current architecture logs to files — fine for 1-10 users, useless
+at scale.
+
+### Summary of the 100-concurrent-user threat model
+
+| Bottleneck | Severity | Fix effort |
+|---|---|---|
+| Anthropic RPM limits | **High** — causes hard failures | Medium: retry logic + tier upgrade |
+| Embedding model RAM | **High** — infeasible without extraction | High: embeddings as a service |
+| ChromaDB write contention | Medium — slows ingestion | Medium: switch to server mode |
+| aiohttp connection pool sizing | Medium — silent slowdown | Low: config change |
+| No request queue | Medium — no backpressure | Medium: add queue + rate limiter |
+| No circuit breakers | Low-medium — fail-slow on outages | Low: library wrapper |
+| Observability | Low short-term, high long-term | Medium: OTel integration |
+
+The honest answer: **the current architecture is designed for single-user
+interactive use and would start failing between 20-50 concurrent users
+without modification.** Each failure mode above has a known fix; none
+require architectural redesign. The order of fixes would be
+(1) API retry + token bucket, (2) embedding service extraction,
+(3) request queue, (4) observability, (5) everything else.
+
+
 ## What this architecture does NOT provide
 
 Listed honestly so the reader can evaluate fitness for their use case:
