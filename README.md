@@ -64,7 +64,7 @@ python main.py "your query" --verbose
 
 ### Example output
 
-======================================================================
+```bash
 QUERY: What is the population of France multiplied by 2?
 PLAN (2 step(s), 2 group(s)):
 Reasoning: Need France's population from KB, then multiply by 2...
@@ -78,6 +78,7 @@ FINAL ANSWER:
 The population of France is 67.97 million. Multiplied by 2, this equals 135.94 million.
 ======================================================================
 METRICS: 10.50s wall time | 2 LLM calls | $0.012457 query spend | 1 iteration(s)
+```
 
 ## Tools
 
@@ -107,6 +108,7 @@ committed as `runs/eval_v2_baseline.json` and `runs/eval_v1_ablation.json`.
 
 ## Project structure
 
+```bash
 agent/
 config.py         Env-var loading, model pricing
 budget.py         Token + cost tracking with hard caps (thread-safe)
@@ -131,6 +133,7 @@ pdfs/             Sample PDFs for document_qa
 runs/               Evaluation results (JSON)
 main.py             CLI entry point
 test_setup.py       Pre-flight check (API keys, dependencies)
+```
 
 ## Model usage & costs
 
