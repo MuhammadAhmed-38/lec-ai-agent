@@ -67,7 +67,7 @@ python main.py "your query" --verbose
 ```bash
 QUERY: What is the population of France multiplied by 2?
 PLAN (2 step(s), 2 group(s)):
-Reasoning: Need France's population from KB, then multiply by 2...
+Reasoning: Need Frances population from KB, then multiply by 2...
 [1] knowledge_base_lookup({'action': 'lookup', 'path': 'countries.france.population_millions'})
 [2] calculator({'expression': '{{step_1.output}} * 2'}) depends_on=[1]
 Parallel groups: [[1], [2]]
