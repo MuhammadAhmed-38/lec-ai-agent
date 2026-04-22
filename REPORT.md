@@ -15,6 +15,13 @@ sandbox). Dual-model split: Claude Sonnet for planning and synthesis, Haiku
 for the evaluation judge. Hard budget caps enforced per-query and per-session.
 Full details and diagrams in `ARCHITECTURE.md`.
 
+**On the spec's "reflect" step:** Reflection happens implicitly inside the
+synthesis call — the Haiku synthesis LLM reasons over all tool
+observations (including failures) under strict grounding rules before
+producing the final answer. An explicit separate reflection step
+between observations and synthesis is scoped as ROADMAP item #1 and
+would primarily address multi-hop failures like Q8.
+
 ## Results
 
 **Baseline (v2 prompts, 10 queries):** 9/10 passed, mean score 0.95,
