@@ -1,8 +1,6 @@
-# LEC AI Agent — Production Agentic System
+# Production Agentic System — Multi-Tool AI Agent
 
-A multi-tool agent that decomposes user queries into an explicit JSON plan,
-executes tools in parallel where possible, and synthesises grounded final
-answers. Built for the LEC AI AI Engineer assignment (Assignment 2).
+A multi-tool agent that decomposes user queries into an explicit JSON plan, executes tools in parallel where possible, and synthesises grounded final answers. A personal project exploring explicit-planning agent architectures, parallel tool execution, and rigorous LLM evaluation.
 
 ## TL;DR results
 
@@ -27,8 +25,8 @@ answers. Built for the LEC AI AI Engineer assignment (Assignment 2).
 
 ```bash
 # 1. Clone and enter
-git clone https://github.com/MuhammadAhmed-38/lec-ai-agent.git
-cd lec-ai-agent
+git clone https://github.com/MuhammadAhmed-38/production-agentic-system.git
+cd production-agentic-system
 
 # 2. Install
 python3 -m venv venv
@@ -106,7 +104,9 @@ python -m eval.runner --prompt-version v2 --queries Q1 Q4 Q7
 
 ## Evaluation summary
 
-Ran on 10 queries covering all 5 tools across sequential, parallel, and mixed-source scenarios. v2 passes 9/10 (90%); v1 passes 8/10 (80%). The single v2 failure (Q8, multi-hop KB lookup) reveals a structural planning limitation documented in [`REPORT.md`](./REPORT.md) and addressed in the roadmap. Full per-query breakdown: [`runs/eval_v2_baseline.json`](./runs/eval_v2_baseline.json).
+Ran on 10 queries covering all 5 tools across sequential, parallel, and mixed-source scenarios. v2 passes 9/10 (90%); v1 passes 8/10 (80%). The single v2 failure (Q8, multi-hop KB lookup) reveals a structural planning limitation documented in [`REPORT.md`](./REPORT.md) and addressed in the 
+
+roadmap. Full per-query breakdown: [`runs/eval_v2_baseline.json`](./runs/eval_v2_baseline.json).
 
 
 Results are saved as JSON in `runs/`. Baseline + ablation artifacts are
@@ -162,5 +162,4 @@ See `REPORT.md` for detailed analysis. Short version:
 
 ## License & attribution
 
-Built for LEC AI's AI Engineer hiring assignment. See `AI_USAGE.md` for
-the breakdown of Claude-assisted vs. human-authored contributions.
+A personal portfolio project demonstrating production agentic system design.

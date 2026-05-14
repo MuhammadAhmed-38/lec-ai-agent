@@ -1,5 +1,5 @@
 """
-CLI entry point for the LEC AI agent.
+CLI entry point for the production agentic system.
 
 Usage:
     python main.py "your query here"
@@ -100,8 +100,8 @@ def _json_default(obj: Any) -> Any:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="lec-ai-agent",
-        description="Run a query through the LEC AI production agent.",
+        prog="agent",
+        description="Run a query through the production agentic system.",
     )
     parser.add_argument(
         "query",

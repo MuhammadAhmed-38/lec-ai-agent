@@ -6,7 +6,7 @@ Budget tracker: token + cost tracking with hard budget caps.
 - Thread-safe via threading.Lock for parallel tool execution.
 
 Design choice: hard rejection (not graceful degradation) because
-the assignment spec explicitly says "rejects when exceeded".
+the design requires hard rejection when the budget is exceeded.
 """
 from __future__ import annotations
 

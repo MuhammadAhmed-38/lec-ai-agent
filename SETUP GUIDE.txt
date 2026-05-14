@@ -1,0 +1,75 @@
+=========================================================
+                 # Personal Setup Notes
+=========================================================
+
+## Quick run from scratch
+
+1) Open the folder in Terminal
+
+cd path-to-the-foler/production-agentic-system
+
+
+
+2) Activate the virtual environment and activate it using the following
+
+python3 -m venv venv
+source venv/bin/activate
+
+
+3) Install the requirements.txt 
+
+pip install -r requirements.txt
+
+
+
+4) Verify setup works:
+
+python test_setup.py
+
+
+5) Run a query
+
+python main.py "What is the capital of Japan?"
+python main.py "Who “was Major Muhammad Akram?”
+python main.py "What is the sum of -2 and 10.6?”
+
+
+
+6) Run full evaluation (costs ~$0.15)
+
+python -m eval.runner --prompt-version v2
+
+
+=========================================================
+
+## If .env is missing (fresh machine)
+
+```bash
+cp .env.example .env
+# Then edit .env and add:
+#   ANTHROPIC_API_KEY (from https://console.anthropic.com/settings/keys)
+#   TAVILY_API_KEY (from https://tavily.com)
+```
+
+## If ChromaDB is empty (fresh clone)
+
+```bash
+# Ingest PDFs into vector store
+python -m tools.document_qa
+```
+
+## Common issues I hit during development
+
+- **Terminal loses venv** — always check prompt shows `(venv)`. If not: `source venv/bin/activate`
+- **API credit error** — check balance at https://console.anthropic.com/settings/billing
+- **ChromaDB telemetry warnings** — harmless, ignore them
+- **Budget exceeded error** — increase `BUDGET_CAP_TOTAL` in `.env` if doing heavy eval runs
+
+## Key files to remember
+
+- `main.py` — CLI entry, run queries
+- `eval/runner.py` — evaluation harness
+- `agent/prompts.py` — v1 vs v2 prompts (for ablation)
+- `FAILURE_LOG.md` — my debugging journal
+- `REPORT_NOTES.md` — eval findings for report
+

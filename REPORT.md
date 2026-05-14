@@ -1,8 +1,7 @@
 # Production Agentic System — Report
 
 **Author:** Muhammad Ahmed
-**Assignment:** LEC AI — AI Engineer, Assignment 2
-**Timeline:** ~30 working hours across 2 days
+**Timeline:** ~10 working hours across 2 days
 
 ## What I built
 

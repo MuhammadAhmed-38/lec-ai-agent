@@ -1,9 +1,6 @@
 # Architecture
 
-This document explains the design decisions behind the LEC AI agent, the
-alternatives considered, and the trade-offs accepted. It is intentionally
-opinionated — each choice is justified by either a production concern, an
-eval signal, or a stated assignment requirement.
+This document explains the design decisions behind this agent, the alternatives considered, and the trade-offs accepted. It is intentionally opinionated — each choice is justified by either a production concern, an eval signal, or a core design goal.
 
 ## System overview
 
@@ -104,7 +101,7 @@ runs it, then a synthesis call produces the final answer.
 `messages.create` and let the model call tools iteratively).
 
 **Why:**
-- Assignment explicitly requires *"the agent states a plan before executing"*.
+- A core design goal *"the agent states a plan before executing"*.
 - Full trace visibility — every plan, every tool call, every observation
   is inspectable. Critical for debugging during the 48-hour build and
   for eval reproducibility.

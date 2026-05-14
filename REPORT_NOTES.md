@@ -19,7 +19,7 @@ preserving plan quality.
 
 ### Explicit plan-based execution (not native tool use)
 Chose explicit plan-based execution over Anthropic's native tool-use loop because:
-(a) the assignment requires an explicit planning step, (b) it gives full visibility
+(a) an explicit planning step was a core design goal, (b) it gives full visibility
 into the decision trace for debugging, and (c) it makes prompt ablation surgical —
 we ablate the planner prompt without touching the executor, or vice versa.
 

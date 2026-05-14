@@ -20,11 +20,7 @@ What this sandbox does NOT provide:
   - CPU/memory quotas (would need cgroups).
   - Filesystem isolation beyond what Python respects.
 
-For the assignment: the agent only runs code it *generates itself* based
-on user queries — not arbitrary user-submitted code. Threat model is
-"LLM makes a mistake and writes destructive code" rather than "attacker
-tries to escape the sandbox". This layered-defence approach is
-appropriate for that threat model.
+Design scope: the agent only runs code it *generates itself* based on user queries — not arbitrary user-submitted code. Threat model is "LLM makes a mistake and writes destructive code" rather than "attacker tries to escape the sandbox". This layered-defence approach is appropriate for that threat model.
 """
 from __future__ import annotations
 
